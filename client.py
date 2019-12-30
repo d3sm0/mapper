@@ -6,6 +6,7 @@ import socket
 import struct
 import time
 import subprocess
+import sys
 
 FREQ = 2417 # mhz
 FSPL = 27.55 # this should be negative
@@ -19,7 +20,7 @@ def get_distance(dbm):
     m = 10 ** ((FSPL  + dbm - log_freq) /20)
     return m
     
-host = '10.0.0.1'
+host = sys.argv[1]
 port = 65432
 buffer_size = 1024
 
