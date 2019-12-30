@@ -63,7 +63,7 @@ def parse_program_output(s, out_file):
             except:
                 print("Connection closed.")
                 s.close()
-                break
+                return
         #time.sleep(5)
 
 with open('dump.txt', 'wb') as out_file:
@@ -74,6 +74,6 @@ with open('dump.txt', 'wb') as out_file:
                 print("Connected with server {}:{}".format(host, port))
                 parse_program_output(s, out_file)
             except Exception as e:
-                print("Connection error")
+                print("Connection error: {}".format(e))
                 time.sleep(1)
 
