@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from render import Window, WindowManager, Square
 
 import numpy
 import scipy
@@ -46,6 +47,10 @@ def find_location(ap_data):
     result = scipy.optimize.minimize(measure_distance_error, start_point, (sniffer_locations, sniffer_distances))
     return result
 
+pos_x =  400
+pos_y = 200
+window = Window()
+wm = WindowManager(window)
 
 def client_thread(conn, addr, port, thread_id):
     PACKET_SIZE = 10 # 6 bytes MAC address + 4 bytes distance
@@ -80,6 +85,9 @@ def compute_mac_addr_coordinates(raspi_mac_addrs):
 
 def render_mac_addr_coordinates(x, y, mac):
     print("Mac address {} found at {}!".format(mac, (x, y)))
+    square = Square(x,y)
+    wm.add_object(mac, square)
+    wm.step()
 
 def consume_mac_data():
     rasp_connected.acquire()
@@ -133,3 +141,5 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
 for t in threads:
     t.join()
+
+wm.close()

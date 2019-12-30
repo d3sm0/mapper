@@ -2,6 +2,7 @@
 
 import os, sys, math, pygame, pygame.mixer
 import collections
+import numpy as np
 from pygame.locals import *
 
 black = (0,0,0)
@@ -15,8 +16,9 @@ class Square:
     square_color = blue
     square_size = (10, 10)
 
-    def __init__(self, x,y):
+    def __init__(self, x,y, color = blue):
         self.square_coord = ((x,y), self.square_size)
+        self.square_color = color
 
     def draw(self,screen):
         pygame.draw.rect(screen, self.square_color, self.square_coord)
@@ -68,18 +70,20 @@ class WindowManager:
 
     def add_object(self,key, value):
         # value is a pygame object instance
-        self.objects[key] = value
+        if not key in self.objects.keys():
+            self.objects[key] = value
 
     def update(self, key, value):
         self.objects[key].update(*value)
 
-    def step(self, moves):
+    def step(self, moves=None):
         self.window.update()
-        for k,v in moves.items():
-            try:
-                self.update(k, v)
-            except AttributeError:
-                pass
+        if moves is not None:
+            for k,v in moves.items():
+                try:
+                    self.update(k, v)
+                except AttributeError:
+                    pass
         for k,v in self.objects.items():
             v.draw(self.window.screen)
         pygame.display.flip()
@@ -112,17 +116,19 @@ def do_work():
     steps = {0:(pos_x, pos_y)}
     return steps
 
-pos_x =  400
-pos_y = 200
-circle = Circle(pos_x, pos_y)
-square = Square(400, 400)
-window = Window()
-wm = WindowManager(window)
-wm.add_object(0, circle)
-wm.add_object(1, square)
-run_me = True
-while run_me:
-    steps = do_work()
-    wm.step(steps)
-wm.close()
+#pos_x =  400
+#pos_y = 200
+#circle = Circle(pos_x, pos_y)
+
+#window = Window()
+#wm = WindowManager(window)
+#
+#import time
+#for i  in range(5):
+#    x,y = np.random.randint(100, 200, 2)
+#    square = Square(x, y)
+#    wm.add_object(i, square)
+#    wm.step()
+#    time.sleep(5)
+#wm.close()
 
