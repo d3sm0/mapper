@@ -30,7 +30,7 @@ def client_thread(conn, addr, port, thread_id):
             print("Client {} disconnected.".format(thread_id))
             all_known_macs[thread_id] = {}
             conn.close()
-        fields = struct.unpack("<6Bi", msg)
+        fields = struct.unpack("<6Bf", msg)
         mac_addr = fields[0:6]
         distance = fields[6]
 
@@ -63,10 +63,11 @@ def consume_mac_data():
         thread_id, mac_addr, distance = mac_info_queue.get()
         print("Received update from thread {} for mac address {}, distance {}".format(thread_id, mac_addr, distance))
         all_known_macs[thread_id][mac_addr] = distance
-        available_for_this_mac = [mac_addr in all_known_macs[i] for i in range(len(all_known_macs))]
+        # Pick all raspberries that know about this mac address
+        available_for_this_mac = {thread_id: all_known_macs[thread_id][mac_addr] for thread_id in range(len(all_known_macs)) if mac_addr in all_known_macs[thread_id]}
         if len(available_for_this_mac) >= 2:
             print("Data for mac address {} available!".format(mac_addr))
-            x, y = compute_mac_addr_coordinates(available_for_this_mac)
+            x, y = compute_mac_addr_coordinates([available_for_this_mac[0], available_for_this_mac[1]])
             render_mac_addr_coordinates(x, y, mac_addr)
         something_pushed.release()
 
