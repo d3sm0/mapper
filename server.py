@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 
+import numpy
+import scipy
+import scipy.optimize
 import struct
 import socket
 import threading
 import traceback
 import collections
 import sys
+import numpy as np
 
 from queue import Queue
 from tol import get_center
@@ -20,6 +24,28 @@ rasp_connected = threading.Condition()
 mac_info_queue = Queue()
 all_known_macs = []
 n_connected_rasp = 0
+
+def measure_distance_error(supposed_location, sniffer_locations, sniffer_distances):
+    err = 0
+    for loc, dist in zip(sniffer_locations, sniffer_distances):
+        actual_dist = numpy.linalg.norm(supposed_location - loc)
+        dist_err = actual_dist - dist
+        err += dist_err * dist_err
+    print("Location {} -> err {}".format(supposed_location, err))
+    return err
+
+
+def find_location(ap_data):
+    """
+    @param ap_data list of couples (sniffer location [x,y], distance to sniffer)
+    """
+    sniffer_locations = np.array([loc for loc, _ in ap_data])
+    sniffer_distances = np.array([dist for _, dist in ap_data])
+    start_point = np.mean(sniffer_locations, axis=0)
+    print("Location mean of known sniffers: {}".format(start_point))
+    result = scipy.optimize.minimize(measure_distance_error, start_point, (sniffer_locations, sniffer_distances))
+    return result
+
 
 def client_thread(conn, addr, port, thread_id):
     PACKET_SIZE = 10 # 6 bytes MAC address + 4 bytes distance
@@ -41,10 +67,16 @@ def client_thread(conn, addr, port, thread_id):
         something_pushed.notify()
         something_pushed.release()
 
+raspi0_location = [0,0]
+raspi1_location = [0.6, 0.8]
+
 def compute_mac_addr_coordinates(raspi_mac_addrs):
     assert len(raspi_mac_addrs) == 2, 'Using {} mac addresses is unsupported.'.format(len(raspi_mac_addrs))
-    center = get_center(raspi_mac_addrs[0], raspi_mac_addrs[1])
-    return center.x, center.y
+    #center = get_center(raspi_mac_addrs[0], raspi_mac_addrs[1])
+    center = find_location([(raspi0_location, raspi_mac_addrs[0]), (raspi1_location, raspi_mac_addrs[1])])
+    if center.success:
+        print("Raspi distances: {} -> point is at {}".format(raspi_mac_addrs, center.x))
+    return center
 
 def render_mac_addr_coordinates(x, y, mac):
     print("Mac address {} found at {}!".format(mac, (x, y)))
@@ -67,8 +99,12 @@ def consume_mac_data():
         available_for_this_mac = {thread_id: all_known_macs[thread_id][mac_addr] for thread_id in range(len(all_known_macs)) if mac_addr in all_known_macs[thread_id]}
         if len(available_for_this_mac) >= 2:
             print("Data for mac address {} available!".format(mac_addr))
-            x, y = compute_mac_addr_coordinates([available_for_this_mac[0], available_for_this_mac[1]])
-            render_mac_addr_coordinates(x, y, mac_addr)
+            result = compute_mac_addr_coordinates([available_for_this_mac[0], available_for_this_mac[1]])
+            if result.success:
+                x, y = result.x
+                render_mac_addr_coordinates(x, y, mac_addr)
+            else:
+                print("Couldn't compute center :(")
         something_pushed.release()
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -81,7 +117,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     while True:
         print("Waiting for a connection.")
         conn, addr = s.accept()
-        print(f"Connected with {addr[0]}:{addr[1]}")
+        print("Connected with {}:{}".format(addr[0],addr[1]))
         try:
             new_thread_id = len(all_known_macs)
             all_known_macs.append({})
