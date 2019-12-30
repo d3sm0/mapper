@@ -58,15 +58,22 @@ def parse_program_output(s, out_file):
             print('Rec {}'.format(line))
             print('MAC {} -> d {}'.format(mac, d))
             out_file.write(line)
-            s.send(struct.pack("<6Bf", *mac, d))
+            try:
+                s.send(struct.pack("<6Bf", *mac, d))
+            except:
+                print("Connection closed.")
+                s.close()
+                break
         #time.sleep(5)
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    try:
-        s.connect((host, port))
-        print("Connected with server {}:{}".format(host, port))
-    except Exception as e:
-        print("Connection error")
+with open('dump.txt', 'wb') as out_file:
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.connect((host, port))
+                print("Connected with server {}:{}".format(host, port))
+                parse_program_output(s, out_file)
+            except Exception as e:
+                print("Connection error")
+                time.sleep(1)
 
-    with open('dump.txt', 'wb') as out_file:
-        parse_program_output(s, out_file)
