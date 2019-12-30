@@ -1,0 +1,5 @@
+events.stream off
+wifi.recon on
+events.ignore wifi.client
+events.ignore sys.log
+events.stream on
