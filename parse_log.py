@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
+
 import re
 import collections
 import pickle as pkl
 import math
-from pdf2image import convert_from_path, convert_from_bytes
 import numpy as np
 
 FREQ = 2417 # mhz
@@ -36,10 +37,3 @@ def gather_data():
 
     with open('dataset.pkl', 'we') as fout:
         pkl.dump(dict(dataset), fout)
-                
-#images =  convert_from_path(_floor_plan, dpi=50)
-
-
-
-
-
