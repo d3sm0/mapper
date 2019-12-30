@@ -55,7 +55,7 @@ def parse_program_output(s, out_file):
             d, dbm, mac, timestamp = parsed_output
             #s.send(b'clientA: Hello, World')
             #data = s.recv(buffer_size)
-            print('Rec {}'.format(line))
+            print('Rec {}'.format(line.strip()))
             print('MAC {} -> d {}'.format(mac, d))
             out_file.write(line)
             try:
