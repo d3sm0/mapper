@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os, sys, math, pygame, pygame.mixer
 import collections
 from pygame.locals import *
@@ -109,7 +111,7 @@ def do_work():
 
     steps = {0:(pos_x, pos_y)}
     return steps
-        
+
 pos_x =  400
 pos_y = 200
 circle = Circle(pos_x, pos_y)
