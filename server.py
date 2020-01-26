@@ -15,9 +15,8 @@ import numpy as np
 from queue import Queue
 from tol import get_center
 
-
-host = '0.0.0.0'
-port = 65432
+host = ''
+port = 1
 n_requests = 5
 something_pushed = threading.Condition()
 rasp_connected = threading.Condition()
@@ -49,8 +48,8 @@ def find_location(ap_data):
 
 pos_x =  400
 pos_y = 200
-window = Window()
-wm = WindowManager(window)
+# window = Window()
+# wm = WindowManager(window)
 
 def client_thread(conn, addr, port, thread_id):
     PACKET_SIZE = 10 # 6 bytes MAC address + 4 bytes distance
@@ -61,6 +60,7 @@ def client_thread(conn, addr, port, thread_id):
             print("Client {} disconnected.".format(thread_id))
             all_known_macs[thread_id] = {}
             conn.close()
+
         fields = struct.unpack("<6Bf", msg)
         mac_addr = fields[0:6]
         distance = fields[6]
@@ -85,9 +85,9 @@ def compute_mac_addr_coordinates(raspi_mac_addrs):
 
 def render_mac_addr_coordinates(x, y, mac):
     print("Mac address {} found at {}!".format(mac, (x, y)))
-    square = Square(x,y)
-    wm.add_object(mac, square)
-    wm.step()
+    # square = Square(x,y)
+    # wm.add_object(mac, square)
+    # wm.step()
 
 def consume_mac_data():
     rasp_connected.acquire()
@@ -115,9 +115,23 @@ def consume_mac_data():
                 print("Couldn't compute center :(")
         something_pushed.release()
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+import bluetooth
+from contextlib import contextmanager
+
+@contextmanager
+def ble_socket(*args,**kwargs):
+    s = bluetooth.BluetoothSocket(*args,**kwargs)
+    try:
+        yield s
+    finally:
+        s.close()
+
+with ble_socket(bluetooth.RFCOMM) as s:
+    #with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    # s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     s.bind((host, port))
+
     s.listen(n_requests)
 
     triangulator = threading.Thread(target=consume_mac_data).start()
@@ -141,5 +155,5 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
 for t in threads:
     t.join()
-
+# fix dbm none
 wm.close()
